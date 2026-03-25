@@ -222,12 +222,34 @@
         .contact-value { font-size: 0.9rem; font-weight: 500; color: var(--text); }
         footer { text-align: center; padding: 3rem 2rem; color: var(--text-muted); font-size: 0.8rem; border-top: 1px solid var(--border); }
         @media (max-width: 768px) {
-            .flip-text { font-size: 2rem; }
-            .flip-subtitle { font-size: 1.2rem; }
+            .flip-text { font-size: 1.6rem; letter-spacing: 0.1em; }
+            .flip-subtitle { font-size: 1rem; }
             .floating-skills { display: none; }
             .nav-links { display: none; }
-            section { padding: 4rem 1.25rem; }
+            nav .nav-inner { padding: 0.75rem 1rem; }
+            .nav-name { font-size: 0.85rem; }
+            section { padding: 3rem 1rem; }
+            .hero { padding: 4rem 1rem 2rem; flex-direction: column; }
+            .hero-content { max-width: 100%; }
+            .hero-content h2 { font-size: 1.8rem; }
+            .hero-content .subtitle { font-size: 1.1rem; }
+            .hero-content p { font-size: 0.9rem; max-width: 100%; }
+            .hero-buttons { flex-direction: column; gap: 0.75rem; }
+            .hero-buttons a { width: 100%; text-align: center; }
+            .terminal { width: 100%; margin-top: 2rem; font-size: 0.7rem; padding: 1rem; }
             .skills-grid { grid-template-columns: 1fr; }
+            .experience-item { padding-left: 1.5rem; }
+            .experience-item::before { left: 0; }
+            .contact-layout { grid-template-columns: 1fr !important; }
+            .contact-info { margin-bottom: 2rem; }
+            footer { font-size: 0.75rem; padding: 1.5rem 1rem; }
+        }
+        @media (max-width: 480px) {
+            .flip-text { font-size: 1.2rem; letter-spacing: 0.05em; }
+            .flip-subtitle { font-size: 0.85rem; }
+            .hero-content h2 { font-size: 1.4rem; }
+            .terminal { font-size: 0.6rem; }
+            section { padding: 2.5rem 0.75rem; }
         }
     </style>
 </head>
