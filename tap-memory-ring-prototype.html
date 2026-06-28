@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Tap Memory Ring — Mechanism Prototype</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;background:#11141a;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;overflow:hidden;}
+  #wrap{position:fixed;inset:0;touch-action:none;}
+  canvas{display:block;width:100%;height:100%;}
+  #labels{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+  .lbl{position:absolute;transform:translate(-50%,-50%);background:rgba(12,19,27,0.85);color:#eaf2f5;
+       font-size:11.5px;font-weight:600;padding:4px 8px;border-radius:7px;white-space:nowrap;
+       border:1px solid rgba(91,181,190,0.55);}
+  .lbl b{color:#7fe3ec;}
+  .lbl i{color:#8aa0aa;font-style:normal;font-weight:500;}
+  #title{position:absolute;top:10px;left:0;right:0;text-align:center;color:#eaf2f5;font-size:15px;
+         font-weight:700;pointer-events:none;text-shadow:0 1px 4px #000;padding:0 10px;}
+  #explain{position:absolute;top:33px;left:0;right:0;text-align:center;color:#9fd6dc;font-size:12.5px;
+           pointer-events:none;padding:0 16px;min-height:32px;}
+  #bar{position:absolute;left:0;right:0;bottom:12px;display:flex;gap:7px;justify-content:center;
+       flex-wrap:wrap;padding:0 10px;z-index:5;}
+  .btn{background:#1c242f;color:#dfe7ee;border:1px solid #33414f;border-radius:10px;padding:9px 12px;
+       font-size:13px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+  .btn:active{background:#0d7d8a;border-color:#0d7d8a;}
+  .btn.on{background:#0d7d8a;border-color:#0d7d8a;color:#fff;}
+  #hint{position:absolute;bottom:58px;left:0;right:0;text-align:center;color:#7e909b;font-size:11px;pointer-events:none;}
+  #click{position:absolute;color:#f7a14a;font-weight:800;font-size:22px;opacity:0;transform:translate(-50%,-50%);
+         pointer-events:none;text-shadow:0 1px 5px #000;}
+  #err{position:absolute;inset:0;display:none;align-items:center;justify-content:center;color:#eaf2f5;
+       font-size:15px;text-align:center;padding:30px;}
+
+  #legend{position:absolute;top:62px;left:10px;max-width:200px;background:rgba(12,19,27,0.88);
+          border:1px solid rgba(91,181,190,0.4);border-radius:10px;padding:9px 11px;color:#cfe3e7;
+          font-size:10.8px;line-height:1.55;display:none;z-index:4;}
+  #legend.show{display:block;}
+  #legend b{color:#7fe3ec;}
+  #legend .grp{color:#f7a14a;font-weight:700;margin-top:4px;display:block;}
+  #legend .grp:first-child{margin-top:0;}
+
+  #story{position:absolute;inset:0;background:rgba(9,13,18,0.95);display:none;z-index:20;overflow:auto;
+        padding:54px 16px 30px;}
+  #story.show{display:block;}
+  .storyBox{max-width:560px;margin:0 auto;color:#eaf2f5;}
+  .storyBox h2{font-size:17px;margin-bottom:4px;color:#7fe3ec;}
+  .storyBox .sub{font-size:12px;color:#8aa0aa;margin-bottom:16px;}
+  .storyTabs{display:flex;gap:7px;margin-bottom:14px;flex-wrap:wrap;}
+  .stab{background:#1c242f;border:1px solid #33414f;color:#cfd9e2;border-radius:8px;padding:7px 11px;
+       font-size:12px;cursor:pointer;font-weight:600;}
+  .stab.on{background:#0d7d8a;border-color:#0d7d8a;color:#fff;}
+  .spane{display:none;}
+  .spane.on{display:block;}
+  .card{background:#161d25;border:1px solid #2b3744;border-radius:10px;padding:11px 13px;margin-bottom:9px;}
+  .card.best{border-color:#0d7d8a;background:#0f242a;}
+  .card h3{font-size:13px;color:#7fe3ec;margin-bottom:4px;}
+  .card h3 .tag{background:#0d7d8a;color:#fff;font-size:9.5px;font-weight:700;padding:2px 6px;border-radius:5px;
+       margin-left:6px;vertical-align:middle;}
+  .card p{font-size:12px;color:#c4d0d8;line-height:1.5;}
+  .card p i{color:#8aa0aa;}
+  .closeStory{position:absolute;top:10px;right:12px;background:#1c242f;border:1px solid #33414f;color:#eaf2f5;
+       border-radius:8px;padding:7px 11px;font-size:13px;cursor:pointer;z-index:21;}
+  .kv{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px solid #232c36;}
+  .kv b{color:#7fe3ec;}
+  .pillRow{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 2px;}
+  .pill{background:#1c242f;border:1px solid #33414f;border-radius:14px;padding:4px 9px;font-size:11px;color:#cfd9e2;}
+</style>
+</head>
+<body>
+<div id="wrap"></div>
+<div id="labels"></div>
+<div id="click">click!</div>
+<div id="title">Tap Memory Ring — how the mechanism works</div>
+<div id="explain">Drag to spin · pinch or scroll to zoom in</div>
+<div id="legend">
+  <span class="grp">Tap (existing, not ours)</span>
+  <b>T1</b> Escutcheon — wall plate<br>
+  <b>T2</b> Collar — stays still, we clip on here<br>
+  <b>T3</b> Lever — swivels, carries our follower<br>
+  <b>T4</b> Cartridge — hidden inside, 35/40mm
+  <span class="grp">Our device</span>
+  <b>P1</b> Outer housing<br>
+  <b>P2</b> Soft liner — squeezes onto T2<br>
+  <b>P3</b> Tightening dial<br>
+  <b>P4</b> Saved-spot notch (detent)<br>
+  <b>P5</b> Follower + spring ball
+</div>
+<div id="hint">pinch / scroll to zoom into the parts</div>
+<div id="bar">
+  <button class="btn on" id="bOver">Overview</button>
+  <button class="btn" id="bGrip">How it grips</button>
+  <button class="btn" id="bClick">How it clicks</button>
+  <button class="btn" id="bApart">Take apart</button>
+  <button class="btn" id="bStory">Product story</button>
+  <button class="btn" id="bLeg">Legend</button>
+  <button class="btn on" id="bLbl">Labels</button>
+</div>
+
+<div id="story">
+  <button class="closeStory" id="bCloseStory">✕ Close</button>
+  <div class="storyBox">
+    <h2>Tap Memory Ring — the product story</h2>
+    <div class="sub">Trial version: remembers your spot, not the temperature · mechanical-only v1</div>
+    <div class="storyTabs">
+      <button class="stab on" data-t="idea">The idea</button>
+      <button class="stab" data-t="grip">Grip options</button>
+      <button class="stab" data-t="cost">Cost &amp; roadmap</button>
+      <button class="stab" data-t="name">Naming</button>
+    </div>
+
+    <div class="spane on" data-p="idea">
+      <div class="card best">
+        <h3>One-line goal</h3>
+        <p>Make a cheap little ring that clips onto a normal single-lever tap so you can save your favourite water spot once, and feel a click every time you find it again — no plumber, no electronics.</p>
+      </div>
+      <div class="card">
+        <h3>Why no temperature in v1</h3>
+        <p>The ring sits on the dry collar (T2), behind the water. Output temperature depends on the hot-supply temp, the cold-supply temp, and the lever position — and the device can only know the lever position. The other two drift with the seasons, so a saved position is a saved <i>spot</i>, not a guaranteed degree. We say that honestly in the marketing.</p>
+      </div>
+      <div class="card">
+        <h3>Why it's worth building</h3>
+        <p>Single-lever mixers are the most common tap type and the click/detent mechanism itself is proven, cheap engineering. The real gap is that nobody sells this as an external, retrofit clip-on — every click-and-stop mechanism that exists today is built into the tap at the factory.</p>
+      </div>
+      <div class="card">
+        <h3>The honest risks</h3>
+        <p>One ring fitting every tap is the hardest engineering problem (expect an adapter kit, not one part for all). A saved spot is not an exact temperature. And a large incumbent (Moen, Delta, Kohler) could copy a proven idea — speed and price are the defence.</p>
+      </div>
+    </div>
+
+    <div class="spane" data-p="grip">
+      <p style="font-size:12px;color:#9fd6dc;margin-bottom:10px;">The hardest job is making one ring grip many collar sizes. Five realistic ways, judged the same way a drill chuck, camera aperture, ski-boot dial, hose clamp and jar-opener each solve a version of this puzzle.</p>
+      <div class="card best">
+        <h3>Soft liner + dial <span class="tag">v1 pick</span></h3>
+        <p>A soft silicone/TPE liner hugs the collar like a foam pole-grip, tightened tool-free by a small dial. Cheapest, widest size range, gentle on chrome. <i>This is what's modelled in the 3D view.</i></p>
+      </div>
+      <div class="card">
+        <h3>Band clamp (worm-drive)</h3>
+        <p>A band cinches shut with a small screw, like a garden-hose clip. Very cheap, huge range — but can mark the tap finish and needs a tool. Good fallback if liner costs run high.</p>
+      </div>
+      <div class="card">
+        <h3>Three-finger grip (jaw chuck)</h3>
+        <p>Three jaws slide in together, like a drill chuck holding a bit. Strong and precise, but bulky and has more parts than a light clip-on ring needs.</p>
+      </div>
+      <div class="card">
+        <h3>Camera-eye ring (iris)</h3>
+        <p>Overlapping leaves close like a camera aperture or the pupil of an eye. Looks premium and smooth, but many thin parts make it fragile and pricey to mould for v1.</p>
+      </div>
+      <div class="card">
+        <h3>Squeeze sleeve (collet)</h3>
+        <p>A slotted tube squeezes shut, like pinching a straw. Very precise — but the size range it can cover is under ~1mm, so it only works as a fixed-size adapter, not a universal fit.</p>
+      </div>
+    </div>
+
+    <div class="spane" data-p="cost">
+      <div class="card">
+        <h3>What it costs (2026 estimates)</h3>
+        <div class="kv"><span>3D-printed prototypes</span><b>$50 – $500 total</b></div>
+        <div class="kv"><span>Bridge tooling (1k–5k units)</span><b>~$15,000 – $30,000</b></div>
+        <div class="kv"><span>Per-unit parts at modest volume</span><b>~$3 – $6</b></div>
+        <div class="kv"><span>Likely retail price</span><b>$15 – $40</b></div>
+        <div class="kv" style="border-bottom:none;"><span>Provisional patent, DIY</span><b>~$60 – $75</b></div>
+      </div>
+      <div class="card">
+        <h3>Roadmap — cheapest &amp; safest first</h3>
+        <p>1. Validate demand — talk to 20–30 people, would they pay $20–40?<br>
+        2. Confirm the collar-stays-still assumption on several real tap brands.<br>
+        3. CAD model + one 3D-printed sample to hold and click.<br>
+        4. File a low-cost provisional patent once the design is real.<br>
+        5. Design-for-manufacturing, soft tooling, small pilot run.<br>
+        6. Production tooling and launch.</p>
+      </div>
+      <div class="card">
+        <h3>The golden rule</h3>
+        <p>Do not spend tooling money until real people on real taps confirm the fit and the click. Tooling is where the big cost starts — everything before it should stay cheap.</p>
+      </div>
+    </div>
+
+    <div class="spane" data-p="name">
+      <div class="card">
+        <h3>One-breath pitch</h3>
+        <p>You know how you always fiddle with the shower to get it warm? This little ring clips onto your tap. Set your spot once, and after that it clicks when you're back on it. No plumber, fits most taps.</p>
+      </div>
+      <div class="card">
+        <h3>Name directions</h3>
+        <div class="pillRow">
+          <span class="pill">SpotOn</span><span class="pill">ClickSpot</span><span class="pill">SweetSpot</span>
+          <span class="pill">SnapSpot</span><span class="pill">ClickBack</span><span class="pill">TapMemo</span>
+          <span class="pill">RemembRing</span><span class="pill">JustRight</span><span class="pill">Goldi</span>
+          <span class="pill">Notch</span><span class="pill">Knack</span><span class="pill">Dial-In</span>
+        </div>
+        <p style="margin-top:8px;">Say each out loud, check it hints at the benefit (the spot, the click), search for a free domain and a clear trademark, then test the top three on a few friends.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="err">3D view could not start here.<br>Try a desktop browser.</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+  if(!window.THREE){ document.getElementById('err').style.display='flex'; return; }
+  try{ run(); }catch(e){ document.getElementById('err').style.display='flex'; console.error(e); }
+
+  function run(){
+    const wrap=document.getElementById('wrap');
+    const scene=new THREE.Scene(); scene.background=new THREE.Color(0x11141a);
+    const camera=new THREE.PerspectiveCamera(42,1,0.1,100);
+    const target=new THREE.Vector3(0,0,1.1);
+    camera.position.set(5.2,3.6,7.4); camera.lookAt(target);
+    const renderer=new THREE.WebGLRenderer({antialias:true});
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+    wrap.appendChild(renderer.domElement);
+
+    scene.add(new THREE.HemisphereLight(0xffffff,0x3a434f,0.55));
+    scene.add(new THREE.AmbientLight(0xffffff,0.22));
+    const key=new THREE.DirectionalLight(0xffffff,0.95); key.position.set(5,8,6); scene.add(key);
+    const fill=new THREE.DirectionalLight(0xbcd4e4,0.4); fill.position.set(-6,2,4); scene.add(fill);
+    const rim=new THREE.DirectionalLight(0xffffff,0.55); rim.position.set(-2,-3,-6); scene.add(rim);
+
+    const chrome  =new THREE.MeshStandardMaterial({color:0xe1e6ec,metalness:0.85,roughness:0.26});
+    const chromeDk=new THREE.MeshStandardMaterial({color:0xc4ccd6,metalness:0.85,roughness:0.32});
+    const plastic =new THREE.MeshStandardMaterial({color:0xeef2f6,metalness:0.12,roughness:0.45,transparent:true,opacity:1});
+    const soft    =new THREE.MeshStandardMaterial({color:0x16bcc8,metalness:0.0,roughness:0.9});
+    const accent  =new THREE.MeshStandardMaterial({color:0x0a5f69,metalness:0.25,roughness:0.5});
+    const ballMat =new THREE.MeshStandardMaterial({color:0xf7a14a,metalness:0.3,roughness:0.35});
+    const trackMat=new THREE.MeshStandardMaterial({color:0x9aa6b3,metalness:0.6,roughness:0.4});
+    const socketM =new THREE.MeshStandardMaterial({color:0x123036,metalness:0.4,roughness:0.6});
+    const wallMat =new THREE.MeshStandardMaterial({color:0x262b34,metalness:0.0,roughness:0.97});
+    const Z=Math.PI/2;
+
+    const model=new THREE.Group(); model.rotation.set(-0.18,-0.55,0); scene.add(model);
+    function add(geo,mat,pos,rot){const m=new THREE.Mesh(geo,mat);if(pos)m.position.set(...pos);if(rot)m.rotation.set(...rot);model.add(m);return m;}
+
+    // T1 — escutcheon (wall plate), fixed to the wall behind everything
+    const plate=add(new THREE.CylinderGeometry(3.0,3.0,0.25,56),chrome,[0,0,0.07],[Z,0,0]);
+    const wall=add(new THREE.BoxGeometry(18,18,0.5),wallMat,[0,0,-0.55]);
+
+    // T1b — a short spout so the silhouette reads as "a tap", not an abstract ring
+    const spoutGrp=new THREE.Group(); spoutGrp.position.set(0,1.9,0.2); model.add(spoutGrp);
+    const spoutMesh=new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.18,0.9,20),chrome);
+    spoutMesh.rotation.z=Z*0.85; spoutMesh.position.set(0.32,0.4,0); spoutGrp.add(spoutMesh);
+    const spoutCap=new THREE.Mesh(new THREE.SphereGeometry(0.18,16,12),chromeDk);
+    spoutCap.position.set(0.75,0.75,0); spoutGrp.add(spoutCap);
+
+    // T2 — collar / base. STATIONARY: this is what our device clamps onto.
+    const collar=add(new THREE.CylinderGeometry(1.05,1.05,1.85,44),chromeDk,[0,0,0.95],[Z,0,0]);
+
+    // T3 — lever, swivels about the same axis the device's follower (P5) tracks.
+    // T4 — the cartridge is the standardised 35/40mm stem hidden inside the collar (not modelled, called out only in labels).
+    const piv=new THREE.Group(); piv.position.set(0,0,1.5); piv.rotation.z=0.55; model.add(piv);
+    piv.add(new THREE.Mesh(new THREE.SphereGeometry(0.17,20,16),chrome)).position.set(0,0,0.05); // pivot cap
+    const shaft=new THREE.Mesh(new THREE.CylinderGeometry(0.10,0.17,2.3,24),chrome);
+    shaft.rotation.z=-Z; shaft.position.set(-1.2,0,0); piv.add(shaft);
+    const paddle=new THREE.Mesh(new THREE.SphereGeometry(0.30,20,16),chrome);
+    paddle.scale.set(1,0.55,1.35); paddle.position.set(-2.5,0,0); piv.add(paddle);
+
+    // P5 — follower arm + spring-loaded ball (the nub), rides the device's detent track as the lever swivels
+    const arm=new THREE.Mesh(new THREE.BoxGeometry(1.0,0.14,0.14),accent); arm.position.set(-0.95,0,0); piv.add(arm);
+    const ballR=1.42; // matches the track/notch radius below
+    const ball=new THREE.Mesh(new THREE.SphereGeometry(0.17,20,16),ballMat); ball.position.set(-ballR,0,0); piv.add(ball);
+    // small compression spring behind the ball, coiled along the direction it presses
+    (function(){const pts=[];for(let i=0;i<=40;i++){const t=i/40,a=t*Math.PI*2*5;
+        pts.push(new THREE.Vector3(-1.02-t*0.32, Math.cos(a)*0.06, Math.sin(a)*0.06));}
+      const sp=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),60,0.022,8,false),trackMat);piv.add(sp);})();
+
+    // our device — clips onto T2
+    // P2 — soft liner, squeezes onto the collar to clamp
+    const liner=add(new THREE.CylinderGeometry(1.22,1.22,1.3,48,1,true),soft,[0,0,1.0],[Z,0,0]);
+    // P1 — outer housing
+    const housing=add(new THREE.TorusGeometry(1.7,0.5,22,52),plastic,[0,0,1.25]);
+    add(new THREE.TorusGeometry(1.72,0.11,16,52),chrome,[0,0,1.7]);
+    add(new THREE.TorusGeometry(1.72,0.11,16,52),chrome,[0,0,0.8]);
+    // P3 — tightening dial
+    const dial=new THREE.Group(); dial.position.set(1.18,1.18,1.5); model.add(dial);
+    dial.add(new THREE.Mesh(new THREE.CylinderGeometry(0.34,0.34,0.4,24),accent).rotateX(Z));
+    for(let i=0;i<12;i++){const r=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.17,0.34),accent);const a=i/12*Math.PI*2;r.position.set(Math.cos(a)*0.34,Math.sin(a)*0.34,0);r.rotation.z=a;dial.add(r);}
+    // P4 — detent track + the saved-spot notch
+    const track=add(new THREE.TorusGeometry(ballR,0.06,12,60),trackMat,[0,0,1.5]);
+    const sA=0.55; const sx=-ballR*Math.cos(sA), sy=-ballR*Math.sin(sA);
+    const socket=add(new THREE.SphereGeometry(0.22,18,14),socketM,[sx,sy,1.55]); // the notch/cup, recessed slightly deeper than the track
+
+    // explode — each part flies to its own distinct spot so "take apart" is legible
+    const ex=[
+      [wall,[0,0,-4.2]],
+      [plate,[0,0,-2.4]],
+      [spoutGrp,[0,-0.6,-2.0]],
+      [liner,[0,0,1.3]],
+      [housing,[0,0,2.4]],
+      [dial,[1.0,1.0,3.0]],
+      [track,[0,1.6,3.1]],
+      [socket,[sx*1.3,sy*1.3,3.6]],
+      [piv,[0,0.8,4.3]],
+    ];
+    ex.forEach(o=>o[0].userData.base=o[0].position.clone());
+
+    // grip arrows (inward — the liner clamps onto the collar)
+    const gripArrows=[];
+    [[1,0],[-1,0],[0,1],[0,-1]].forEach(d=>{const dir=new THREE.Vector3(-d[0],-d[1],0).normalize();
+      const o=new THREE.Vector3(d[0]*2.35,d[1]*2.35,1.0);
+      const a=new THREE.ArrowHelper(dir,o,0.7,0xf7a14a,0.28,0.2); a.visible=false; model.add(a); gripArrows.push(a);});
+    // swing arrow (click) — hints "move the lever away, then back"
+    const swing=new THREE.ArrowHelper(new THREE.Vector3(0,-1,0),new THREE.Vector3(-2.0,0.5,1.5),0.9,0xf7a14a,0.3,0.22);
+    swing.visible=false; model.add(swing);
+
+    // labels — T#/P# codes match the research doc's part naming
+    const L=[
+      ['<b>T1</b> Escutcheon <i>(wall plate)</i>',new THREE.Vector3(2.1,2.1,0.15)],
+      ['<b>T2</b> Collar <i>(stays still — we clip here)</i>',new THREE.Vector3(1.0,-0.5,0.9)],
+      ['<b>T3</b> Lever <i>(swivels, carries P5)</i>',new THREE.Vector3(-2.0,0,1.92)],
+      ['<b>P2</b> Soft liner <i>(clamps onto T2)</i>',new THREE.Vector3(-1.0,0.75,1.05)],
+      ['<b>P3</b> Tightening dial',new THREE.Vector3(1.35,1.35,1.55)],
+      ['<b>P1</b> Outer housing',new THREE.Vector3(0,1.74,1.25)],
+      ['<b>P5</b> Follower + spring ball',new THREE.Vector3(-1.6,-0.15,1.42)],
+      ['<b>P4</b> Saved-spot notch <i>(your detent)</i>',new THREE.Vector3(sx-0.2,sy-0.25,1.6)],
+    ];
+    const lblEls=L.map(d=>{const e=document.createElement('div');e.className='lbl';e.innerHTML=d[0];document.getElementById('labels').appendChild(e);return{el:e,pos:d[1]};});
+
+    // ---- state ----
+    let mode='over', showLbl=true, autoRot=true, explodeF=0;
+    function setBtn(id){['bOver','bGrip','bClick','bApart'].forEach(x=>document.getElementById(x).classList.toggle('on',x===id));}
+    const exEl=document.getElementById('explain');
+    function setMode(m){ mode=m; piv.rotation.z=0.55; clkPhase=0; gripT=0; liner.scale.set(1,1,1);
+      gripArrows.forEach(a=>a.visible=(m==='grip')); swing.visible=(m==='click');
+      housing.material.opacity=(m==='grip'||m==='click')?0.45:1.0;
+      if(m==='over'){setBtn('bOver');autoRot=true;exEl.textContent='Drag to spin · pinch or scroll to zoom in';}
+      if(m==='grip'){setBtn('bGrip');autoRot=false;exEl.textContent='Turn the dial (P3) → the soft liner (P2) squeezes inward and clamps onto the collar (T2).';}
+      if(m==='click'){setBtn('bClick');autoRot=false;exEl.textContent='The lever (T3) swivels; the spring-loaded ball (P5) rides the track and drops into the notch (P4) = click.';}
+      if(m==='apart'){setBtn('bApart');autoRot=false;exEl.textContent='Every part pulled apart so you can see T1–T3 and P1–P5 one by one.';}
+    }
+    document.getElementById('bOver').onclick=()=>setMode('over');
+    document.getElementById('bGrip').onclick=()=>setMode('grip');
+    document.getElementById('bClick').onclick=()=>setMode('click');
+    document.getElementById('bApart').onclick=()=>setMode('apart');
+    document.getElementById('bLbl').onclick=function(){showLbl=!showLbl;this.classList.toggle('on',showLbl);};
+    document.getElementById('bLeg').onclick=function(){const l=document.getElementById('legend');l.classList.toggle('show');this.classList.toggle('on',l.classList.contains('show'));};
+
+    // ---- product story overlay ----
+    const story=document.getElementById('story');
+    document.getElementById('bStory').onclick=()=>{story.classList.add('show');};
+    document.getElementById('bCloseStory').onclick=()=>{story.classList.remove('show');};
+    document.querySelectorAll('.stab').forEach(btn=>btn.addEventListener('click',()=>{
+      document.querySelectorAll('.stab').forEach(b=>b.classList.toggle('on',b===btn));
+      const t=btn.dataset.t;
+      document.querySelectorAll('.spane').forEach(p=>p.classList.toggle('on',p.dataset.p===t));
+    }));
+
+    // ---- pointer: rotate (1 finger) + pinch zoom (2 fingers) ----
+    const el=renderer.domElement, ptrs=new Map(); let lx=0,ly=0,pinchD=0;
+    function dolly(f){const dir=new THREE.Vector3().subVectors(camera.position,target);let d=dir.length()*f;d=Math.max(3.2,Math.min(15,d));dir.normalize().multiplyScalar(d);camera.position.copy(target).add(dir);camera.lookAt(target);}
+    el.addEventListener('pointerdown',e=>{el.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});autoRot=false;if(ptrs.size===1){lx=e.clientX;ly=e.clientY;}if(ptrs.size===2){const p=[...ptrs.values()];pinchD=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);}});
+    el.addEventListener('pointermove',e=>{if(!ptrs.has(e.pointerId))return;ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+      if(ptrs.size===1){model.rotation.y+=(e.clientX-lx)*0.008;model.rotation.x=Math.max(-1.1,Math.min(1.1,model.rotation.x+(e.clientY-ly)*0.008));lx=e.clientX;ly=e.clientY;}
+      else if(ptrs.size===2){const p=[...ptrs.values()];const d=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);if(pinchD>0)dolly(pinchD/d);pinchD=d;}});
+    function endP(e){ptrs.delete(e.pointerId);pinchD=0;if(ptrs.size===1){const p=[...ptrs.values()][0];lx=p.x;ly=p.y;}}
+    el.addEventListener('pointerup',endP);el.addEventListener('pointercancel',endP);
+    el.addEventListener('wheel',e=>{e.preventDefault();dolly(1+e.deltaY*0.0012);},{passive:false});
+
+    function resize(){const w=wrap.clientWidth,h=wrap.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
+    window.addEventListener('resize',resize);resize();
+
+    // ---- animation ----
+    let clkPhase=0, gripT=0, pulse=0, tWait=0; const awayA=1.6;
+    const clickEl=document.getElementById('click'); const v=new THREE.Vector3();
+    function ease(c,t,k){return c+(t-c)*k;}
+    function loop(){
+      requestAnimationFrame(loop);
+      if(autoRot && ptrs.size===0) model.rotation.y+=0.0035;
+
+      const eT=(mode==='apart')?1:0; explodeF+=(eT-explodeF)*0.12;
+      ex.forEach(o=>o[0].position.copy(o[0].userData.base).addScaledVector(new THREE.Vector3(...o[1]),explodeF));
+
+      if(mode==='grip'){ gripT+=0.03; const s=1.0-0.14*(0.5+0.5*Math.sin(gripT)); liner.scale.set(s,s,1);
+        dial.rotation.z+=0.05; const aL=0.55+0.25*(0.5+0.5*Math.sin(gripT));
+        gripArrows.forEach(a=>a.setLength(aL,0.28,0.2)); }
+      else if(mode==='click'){
+        if(clkPhase===0){ piv.rotation.z=ease(piv.rotation.z,awayA,0.05); if(Math.abs(piv.rotation.z-awayA)<0.04)clkPhase=1; }
+        else if(clkPhase===1){ piv.rotation.z=ease(piv.rotation.z,0.55,0.05);
+          ball.position.z=0; if(Math.abs(piv.rotation.z-0.55)<0.02){clkPhase=2;pulse=1;} }
+        else if(clkPhase===2){ ball.position.z=0.06; pulse=Math.max(0,pulse-0.018); if(pulse<=0){ball.position.z=0;clkPhase=3;tWait=0;} }
+        else if(clkPhase===3){ tWait++; if(tWait>40)clkPhase=0; }
+      } else { piv.rotation.z=0.55; ball.position.z=0; }
+
+      // notch glow + click text
+      socket.material.color.setHex(pulse>0.1?0x1f7a86:0x123036);
+      clickEl.style.opacity=(mode==='click')?pulse:0;
+      if(pulse>0){ model.updateMatrixWorld(); v.set(sx,sy,1.55).applyMatrix4(model.matrixWorld).project(camera);
+        clickEl.style.left=((v.x*0.5+0.5)*wrap.clientWidth)+'px'; clickEl.style.top=((-v.y*0.5+0.5)*wrap.clientHeight-30)+'px'; }
+
+      model.updateMatrixWorld();
+      lblEls.forEach(o=>{ if(!showLbl){o.el.style.opacity=0;return;}
+        v.copy(o.pos).applyMatrix4(model.matrixWorld).project(camera);
+        if(v.z>1){o.el.style.opacity=0;return;}
+        o.el.style.opacity=0.96; o.el.style.left=((v.x*0.5+0.5)*wrap.clientWidth)+'px'; o.el.style.top=((-v.y*0.5+0.5)*wrap.clientHeight)+'px'; });
+
+      renderer.render(scene,camera);
+    }
+    loop();
+  }
+})();
+</script>
+</body>
+</html>
