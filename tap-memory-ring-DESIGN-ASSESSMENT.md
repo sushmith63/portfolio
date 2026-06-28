@@ -7,6 +7,47 @@ recommends a corrected design. Dated 2026-06-28.
 
 ---
 
+## UPDATE (after seeing a photo of the real tap) — this supersedes the rest
+
+The real tap is a **single-handle ROTARY shower valve** (a Delta), not the
+deck-style swivel mixer the docs and Sections 2–8 below assumed. From the photo:
+
+- **Only the square escutcheon (wall plate) is fixed.**
+- **The collar AND the handle rotate together** about the axis coming out of the
+  wall (confirmed by the user: "as we turn the lever, the collar also turns").
+- It's a **single rotary motion** — sweep the handle in an arc, off → cold → hot.
+  There is no separate up/down tilt. So one saved **angle** = your warmth spot.
+
+This is the case the build doc flagged as the exception ("on a few designs the
+whole collar turns with the lever; reference the fixed wall plate instead"). The
+swivel-vs-tilt analysis and the yoke design in Sections 2–8 do **not** apply to
+this tap. Corrected design for THIS tap (now built in the 3D model):
+
+- **P1 Anchor ring** — fixed to the **plate** (the only still part); holds the
+  saved-spot notch (P4, slide-and-lock).
+- **P2 Coupler cuff** — clamps the **rotating collar**, so it turns with the
+  handle; carries the follower (P3 spring ball). *Here the rotating collar
+  actually helps us — we grip it for our moving part and the plate for our fixed
+  part.*
+- **Detent** (P3 ball + P4 notch) between anchor and coupler → click at the saved
+  angle.
+
+**Honest hard parts for this valve type:**
+- **Anchoring to a flat, smooth, brand-varying escutcheon** without tools is the
+  real challenge. Realistic options: a bracket gripping the plate edges; a thin
+  ring slipped **behind the handle** (pop the set screw, ~5 min); or an adhesive
+  backing ring. A literal zero-install clip-on is hard here.
+- **"Fits many taps" is harder** for this type: plates vary (square here, round
+  elsewhere) in size and shape, and collars/handles vary too. Expect a small
+  range of brackets, not one universal part.
+- The **single rotary motion is a plus** — one angle to remember = the warmth,
+  exactly the daily pain.
+
+The sections below are kept for reference (the reasoning is still useful for
+deck-style mixers), but the design above is the one that matches your tap.
+
+---
+
 ## 0. Straight answer: did I assess, or improvise?
 
 I **improvised a faithful illustration** of the concept written in your three

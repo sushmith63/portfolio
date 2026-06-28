@@ -74,22 +74,20 @@
 <div id="explain">Drag to spin · pinch or scroll to zoom in</div>
 <div id="legend">
   <span class="grp">Tap (existing, not ours)</span>
-  <b>T1</b> Escutcheon — wall plate<br>
-  <b>T2</b> Collar — stays still, we clip on here<br>
-  <b>T3</b> Lever — swivel = warmth, tilt = flow<br>
-  <b>T4</b> Cartridge — hidden inside, 35/40mm
+  <b>T1</b> Wall plate — FIXED (only still part)<br>
+  <b>T2</b> Collar — rotates with the handle<br>
+  <b>T3</b> Handle — sweeps off→cold→hot<br>
+  <b>T4</b> Cartridge — inside the wall
   <span class="grp">Our device</span>
-  <b>P1</b> Outer housing<br>
-  <b>P2</b> Soft liner — squeezes onto T2<br>
-  <b>P3</b> Tightening dial<br>
-  <b>P4</b> Saved-spot notch — slide &amp; lock<br>
-  <b>P5</b> Follower + spring ball<br>
-  <b>P6</b> Yoke + index ring — couples to handle
+  <b>P1</b> Anchor ring — fixed to the plate<br>
+  <b>P2</b> Coupler — clamps the rotating collar<br>
+  <b>P3</b> Follower + spring ball<br>
+  <b>P4</b> Saved-spot notch — slide &amp; lock
 </div>
 <div id="hint">pinch / scroll to zoom into the parts</div>
 <div id="bar">
   <button class="btn on" id="bOver">Overview</button>
-  <button class="btn" id="bGrip">How it grips</button>
+  <button class="btn" id="bGrip">How it mounts</button>
   <button class="btn" id="bClick">How it clicks</button>
   <button class="btn" id="bApart">Take apart</button>
   <button class="btn" id="bStory">Product story</button>
@@ -132,7 +130,7 @@
       <p style="font-size:12px;color:#9fd6dc;margin-bottom:10px;">The hardest job is making one ring grip many collar sizes. Five realistic ways, judged the same way a drill chuck, camera aperture, ski-boot dial, hose clamp and jar-opener each solve a version of this puzzle.</p>
       <div class="card best">
         <h3>Soft liner + dial <span class="tag">v1 pick</span></h3>
-        <p>A soft silicone/TPE liner hugs the collar like a foam pole-grip, tightened tool-free by a small dial. Cheapest, widest size range, gentle on chrome. <i>This is what's modelled in the 3D view.</i></p>
+        <p>A soft silicone/TPE liner hugs the collar like a foam pole-grip, tightened tool-free by a small dial. Cheapest, widest size range, gentle on chrome. <i>Best for taps with a stationary collar; on a rotary shower valve (like the photo) we instead anchor to the fixed wall plate — see the 3D view.</i></p>
       </div>
       <div class="card">
         <h3>Band clamp (worm-drive)</h3>
@@ -207,17 +205,17 @@
     const wrap=document.getElementById('wrap');
     const scene=new THREE.Scene(); scene.background=new THREE.Color(0x11141a);
     const camera=new THREE.PerspectiveCamera(42,1,0.1,100);
-    const target=new THREE.Vector3(0,0,1.1);
-    camera.position.set(5.2,3.6,7.4); camera.lookAt(target);
+    const target=new THREE.Vector3(0,0,0.4);
+    camera.position.set(4.6,3.0,7.6); camera.lookAt(target);
     const renderer=new THREE.WebGLRenderer({antialias:true});
     renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
     wrap.appendChild(renderer.domElement);
 
-    scene.add(new THREE.HemisphereLight(0xffffff,0x3a434f,0.55));
-    scene.add(new THREE.AmbientLight(0xffffff,0.22));
-    const key=new THREE.DirectionalLight(0xffffff,0.95); key.position.set(5,8,6); scene.add(key);
-    const fill=new THREE.DirectionalLight(0xbcd4e4,0.4); fill.position.set(-6,2,4); scene.add(fill);
-    const rim=new THREE.DirectionalLight(0xffffff,0.55); rim.position.set(-2,-3,-6); scene.add(rim);
+    scene.add(new THREE.HemisphereLight(0xffffff,0x3a434f,0.65));
+    scene.add(new THREE.AmbientLight(0xffffff,0.3));
+    const key=new THREE.DirectionalLight(0xffffff,0.9); key.position.set(5,8,6); scene.add(key);
+    const fill=new THREE.DirectionalLight(0xdbe7f0,0.75); fill.position.set(-7,1,5); scene.add(fill); // lifts the handle side out of shadow
+    const rim=new THREE.DirectionalLight(0xffffff,0.5); rim.position.set(-2,-3,-6); scene.add(rim);
 
     const chrome  =new THREE.MeshStandardMaterial({color:0xe1e6ec,metalness:0.85,roughness:0.26});
     const chromeDk=new THREE.MeshStandardMaterial({color:0xc4ccd6,metalness:0.85,roughness:0.32});
@@ -230,102 +228,79 @@
     const wallMat =new THREE.MeshStandardMaterial({color:0x262b34,metalness:0.0,roughness:0.97});
     const Z=Math.PI/2;
 
-    const model=new THREE.Group(); model.rotation.set(-0.18,-0.55,0); scene.add(model);
+    const model=new THREE.Group(); model.rotation.set(-0.12,-0.3,0); scene.add(model);
     function add(geo,mat,pos,rot){const m=new THREE.Mesh(geo,mat);if(pos)m.position.set(...pos);if(rot)m.rotation.set(...rot);model.add(m);return m;}
 
-    // T1 — escutcheon (wall plate), fixed to the wall behind everything
-    const plate=add(new THREE.CylinderGeometry(3.0,3.0,0.25,56),chrome,[0,0,0.07],[Z,0,0]);
-    const wall=add(new THREE.BoxGeometry(18,18,0.5),wallMat,[0,0,-0.55]);
+    // ============ THE REAL TAP — a single-handle rotary shower valve (matches the photo) ============
+    // T1 — square escutcheon / wall plate. FIXED to the wall — the ONLY part that does not move.
+    const wall=add(new THREE.BoxGeometry(20,20,0.5),wallMat,[0,0,-0.95]);
+    const plate=add(new THREE.BoxGeometry(3.4,3.9,0.34),chrome,[0,0,-0.18]);
+    add(new THREE.BoxGeometry(2.9,3.4,0.42),chromeDk,[0,0,-0.16]);
+    add(new THREE.BoxGeometry(0.95,0.55,0.7),chromeDk,[0,-2.75,0.12]); // tub spout below, for context
 
-    // T1b — a short spout so the silhouette reads as "a tap", not an abstract ring
-    const spoutGrp=new THREE.Group(); spoutGrp.position.set(0,1.9,0.2); model.add(spoutGrp);
-    const spoutMesh=new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.18,0.9,20),chrome);
-    spoutMesh.rotation.z=Z*0.85; spoutMesh.position.set(0.32,0.4,0); spoutGrp.add(spoutMesh);
-    const spoutCap=new THREE.Mesh(new THREE.SphereGeometry(0.18,16,12),chromeDk);
-    spoutCap.position.set(0.75,0.75,0); spoutGrp.add(spoutCap);
+    // T2 (collar) + T3 (handle) ROTATE TOGETHER about the axis out of the wall (z) — they sweep like a clock hand.
+    // T4 — the pressure-balance cartridge is inside the wall (not modelled; called out in labels only).
+    const tapRot=new THREE.Group(); tapRot.rotation.z=0.55; model.add(tapRot);
+    const collar=new THREE.Mesh(new THREE.CylinderGeometry(0.82,0.92,1.0,40),chromeDk); collar.rotation.x=Z; collar.position.z=0.42; tapRot.add(collar);
+    const knurl=new THREE.Mesh(new THREE.CylinderGeometry(0.88,0.88,0.18,40),chrome); knurl.rotation.x=Z; knurl.position.z=0.86; tapRot.add(knurl);
+    const dome=new THREE.Mesh(new THREE.SphereGeometry(0.72,28,20),chrome); dome.scale.set(1,1,0.55); dome.position.z=0.98; tapRot.add(dome);
+    const screw=new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.08,0.12,12),accent); screw.rotation.z=Z; screw.position.set(0.84,0.18,0.7); tapRot.add(screw); // set screw — a visible mark so the collar's turn is obvious
+    // T3 — handle: an arm that points out and sweeps in an arc; red/blue dots = hot/cold
+    const harm=new THREE.Mesh(new THREE.BoxGeometry(1.8,0.36,0.28),chrome); harm.position.set(-1.0,0,1.18); tapRot.add(harm);
+    const htip=new THREE.Mesh(new THREE.SphereGeometry(0.22,18,12),chrome); htip.scale.set(1.0,1.6,0.85); htip.position.set(-1.9,0,1.18); tapRot.add(htip);
+    tapRot.add(new THREE.Mesh(new THREE.SphereGeometry(0.07,12,10),new THREE.MeshStandardMaterial({color:0xd83a2c,emissive:0x3a0a06,roughness:0.5}))).position.set(-1.62,0.14,1.33); // red (hot)
+    tapRot.add(new THREE.Mesh(new THREE.SphereGeometry(0.07,12,10),new THREE.MeshStandardMaterial({color:0x2f63d8,emissive:0x06103a,roughness:0.5}))).position.set(-1.62,-0.14,1.33); // blue (cold)
 
-    // T2 — collar / base. STATIONARY: this is what our device clamps onto.
-    const collar=add(new THREE.CylinderGeometry(1.05,1.05,1.85,44),chromeDk,[0,0,0.95],[Z,0,0]);
-
-    // T3 — lever (handle). Swivel left/right = warmth (what we remember); tilt up/down = flow. Nothing is attached to it.
-    // T4 — the cartridge is the standardised 35/40mm stem hidden inside the collar (not modelled, called out only in labels).
-    const piv=new THREE.Group(); piv.position.set(0,0,1.9); piv.rotation.z=0.55; model.add(piv);
-    piv.add(new THREE.Mesh(new THREE.SphereGeometry(0.17,20,16),chrome)).position.set(0,0,0.05); // pivot cap
-    const shaft=new THREE.Mesh(new THREE.CylinderGeometry(0.10,0.17,2.3,24),chrome);
-    shaft.rotation.z=-Z; shaft.position.set(-1.2,0,0); piv.add(shaft);
-    const paddle=new THREE.Mesh(new THREE.SphereGeometry(0.30,20,16),chrome);
-    paddle.scale.set(1,0.55,1.35); paddle.position.set(-2.5,0,0); piv.add(paddle);
-
-    const ballR=1.42; // radius the follower ball rides on the detent track
-
-    // our device — clips onto T2
-    // P2 — soft liner, squeezes onto the collar to clamp
-    const liner=add(new THREE.CylinderGeometry(1.22,1.22,1.3,48,1,true),soft,[0,0,1.0],[Z,0,0]);
-    // P1 — outer housing
-    const housing=add(new THREE.TorusGeometry(1.7,0.5,22,52),plastic,[0,0,1.25]);
-    add(new THREE.TorusGeometry(1.72,0.11,16,52),chrome,[0,0,1.7]);
-    add(new THREE.TorusGeometry(1.72,0.11,16,52),chrome,[0,0,0.8]);
-    // P3 — tightening dial
-    const dial=new THREE.Group(); dial.position.set(1.18,1.18,1.5); model.add(dial);
-    dial.add(new THREE.Mesh(new THREE.CylinderGeometry(0.34,0.34,0.4,24),accent).rotateX(Z));
-    for(let i=0;i<12;i++){const r=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.17,0.34),accent);const a=i/12*Math.PI*2;r.position.set(Math.cos(a)*0.34,Math.sin(a)*0.34,0);r.rotation.z=a;dial.add(r);}
-
-    // P6 — the coupling the first model was missing. A yoke straddles the handle stem and turns this
-    // internal INDEX RING as the handle SWIVELS (left/right = warmth); the yoke just slides if the handle
-    // tilts for flow. The follower (P5) rides on THIS ring, so the device is never attached to the moving handle.
+    // ============ OUR DEVICE — corrected for THIS tap (anchor to the fixed plate, couple to the rotating collar) ============
     const idxMat=new THREE.MeshStandardMaterial({color:0x6f93b4,metalness:0.5,roughness:0.42});
-    const idx=new THREE.Group(); idx.position.set(0,0,1.9); idx.rotation.z=0.55; model.add(idx);
-    idx.add(new THREE.Mesh(new THREE.TorusGeometry(0.62,0.08,14,36),idxMat));            // hub ring around the stem
-    [-1,1].forEach(s=>{const pr=new THREE.Mesh(new THREE.BoxGeometry(0.55,0.12,0.42),idxMat);pr.position.set(-0.55,s*0.2,0);idx.add(pr);}); // yoke prongs straddling the handle shaft
-    // P5 — follower arm + spring-loaded ball, carried by the index ring (not the handle)
-    const arm=new THREE.Mesh(new THREE.BoxGeometry(0.9,0.13,0.13),idxMat); arm.position.set(-1.0,0,0); idx.add(arm);
-    const ball=new THREE.Mesh(new THREE.SphereGeometry(0.24,22,18),ballMat); ball.position.set(-ballR,0,0); idx.add(ball);
-    (function(){const pts=[];for(let i=0;i<=40;i++){const t=i/40,a=t*Math.PI*2*5;
-        pts.push(new THREE.Vector3(-1.04-t*0.30, Math.cos(a)*0.06, Math.sin(a)*0.06));}
-      const sp=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),60,0.022,8,false),trackMat);idx.add(sp);})();
+    const ringR=1.5; // radius the follower ball rides at
 
-    // P4 — detent track + the saved-spot notch on the FIXED body, proud on the front face so it reads clearly.
-    const track=add(new THREE.TorusGeometry(ballR,0.07,12,60),trackMat,[0,0,1.9]);
-    const sA=0.55; const sx=-ballR*Math.cos(sA), sy=-ballR*Math.sin(sA);
-    const socket=add(new THREE.SphereGeometry(0.24,18,14),socketM,[sx,sy,1.86]); // the user-set, lockable notch
+    // P1 — anchor ring: fixed to the escutcheon PLATE (the only still part). Holds the saved-spot notch. Does NOT rotate.
+    const anchor=new THREE.Group(); anchor.position.z=0.34; model.add(anchor);
+    anchor.add(new THREE.Mesh(new THREE.TorusGeometry(1.16,0.12,16,44),plastic));
+    const track=new THREE.Mesh(new THREE.TorusGeometry(ringR,0.07,12,60),trackMat); anchor.add(track);
+    [[1,1],[1,-1],[-1,-0.15]].forEach(d=>{const p=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,0.5,10),idxMat);p.rotation.x=Z;p.position.set(d[0]*0.95,d[1]*0.95,-0.22);anchor.add(p);}); // standoffs that fix it to the plate
+    const sA=0.55; const sx=-ringR*Math.cos(sA), sy=-ringR*Math.sin(sA);
+    const socket=new THREE.Mesh(new THREE.SphereGeometry(0.25,18,14),socketM); socket.position.set(sx,sy,0.04); anchor.add(socket);
 
-    // explode — each part flies to its own distinct spot so "take apart" is legible
+    // P2 — coupler cuff: clamps the ROTATING collar (T2), so it turns with the handle. Carries the follower.
+    const coupler=new THREE.Group(); coupler.position.z=0.6; coupler.rotation.z=0.55; model.add(coupler);
+    coupler.add(new THREE.Mesh(new THREE.TorusGeometry(0.99,0.1,14,40),idxMat));
+    const arm=new THREE.Mesh(new THREE.BoxGeometry(0.6,0.14,0.14),idxMat); arm.position.set(-1.2,0,-0.18); coupler.add(arm);
+    // P3 — follower + spring-loaded ball, rides the anchor's track and drops into the notch at your saved angle
+    const ball=new THREE.Mesh(new THREE.SphereGeometry(0.22,22,18),ballMat); ball.position.set(-ringR,0,-0.26); coupler.add(ball);
+    (function(){const pts=[];for(let i=0;i<=36;i++){const t=i/36,a=t*Math.PI*2*5; pts.push(new THREE.Vector3(-1.0-t*0.28, Math.cos(a)*0.05, -0.26+Math.sin(a)*0.05));}
+      coupler.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),50,0.02,7,false),trackMat));})();
+
+    // explode — top-level groups fly apart so "take apart" is legible
     const ex=[
-      [wall,[0,0,-4.2]],
-      [plate,[0,0,-2.4]],
-      [spoutGrp,[0,-0.6,-2.0]],
-      [liner,[0,0,1.3]],
-      [housing,[0,0,2.4]],
-      [dial,[1.0,1.0,3.0]],
-      [track,[0,1.6,3.1]],
-      [socket,[sx*1.3,sy*1.3,3.6]],
-      [idx,[0,1.1,4.0]],
-      [piv,[0,0.6,4.9]],
+      [wall,[0,0,-3.2]],
+      [plate,[0,0,-1.4]],
+      [anchor,[0,1.5,1.0]],
+      [coupler,[0,-1.5,2.3]],
+      [tapRot,[0,0,4.2]],
     ];
     ex.forEach(o=>o[0].userData.base=o[0].position.clone());
 
-    // grip arrows (inward — the liner clamps onto the collar)
+    // mount arrows — the coupler clamps inward onto the rotating collar
     const gripArrows=[];
     [[1,0],[-1,0],[0,1],[0,-1]].forEach(d=>{const dir=new THREE.Vector3(-d[0],-d[1],0).normalize();
-      const o=new THREE.Vector3(d[0]*2.35,d[1]*2.35,1.0);
-      const a=new THREE.ArrowHelper(dir,o,0.7,0xf7a14a,0.28,0.2); a.visible=false; model.add(a); gripArrows.push(a);});
-    // swing arrow (click) — hints "move the lever away, then back"
-    const swing=new THREE.ArrowHelper(new THREE.Vector3(0,-1,0),new THREE.Vector3(-2.0,0.5,1.95),0.9,0xf7a14a,0.3,0.22);
+      const o=new THREE.Vector3(d[0]*1.5,d[1]*1.5,0.6);
+      const a=new THREE.ArrowHelper(dir,o,0.5,0xf7a14a,0.22,0.16); a.visible=false; model.add(a); gripArrows.push(a);});
+    // swing arrow (click) — hints "sweep the handle away, then back"
+    const swing=new THREE.ArrowHelper(new THREE.Vector3(0,-1,0),new THREE.Vector3(-2.0,0.8,1.2),0.8,0xf7a14a,0.28,0.2);
     swing.visible=false; model.add(swing);
 
-    // labels — T#/P# codes match the research doc's part naming
-    // each label lists the modes it should appear in, so zoomed-in views only show their own parts
+    // labels — each lists the modes it appears in, so zoomed-in views only show their own parts
     const ALL=['over','grip','click','apart'];
     const L=[
-      ['<b>T1</b> Escutcheon <i>(wall plate)</i>',new THREE.Vector3(2.1,2.1,0.15),['over','apart']],
-      ['<b>T2</b> Collar <i>(stays still — we clip here)</i>',new THREE.Vector3(1.0,-0.5,0.9),ALL],
-      ['<b>T3</b> Lever <i>(swivel = warmth)</i>',new THREE.Vector3(-2.15,1.25,2.0),['over','click','apart']],
-      ['<b>P2</b> Soft liner <i>(clamps onto T2)</i>',new THREE.Vector3(-1.0,0.75,1.05),['over','grip','apart']],
-      ['<b>P3</b> Tightening dial',new THREE.Vector3(1.35,1.35,1.55),['over','grip','apart']],
-      ['<b>P1</b> Outer housing',new THREE.Vector3(0,1.74,1.25),['over','apart']],
-      ['<b>P6</b> Yoke + index ring <i>(couples to the handle)</i>',new THREE.Vector3(-0.55,1.0,2.0),['over','click','apart']],
-      ['<b>P5</b> Follower + spring ball',new THREE.Vector3(-2.05,0.5,1.9),['over','click','apart']],
-      ['<b>P4</b> Saved-spot notch <i>(slide &amp; lock)</i>',new THREE.Vector3(sx-0.2,sy-0.25,1.9),['over','click','apart']],
+      ['<b>T1</b> Wall plate <i>(fixed — only still part)</i>',new THREE.Vector3(1.95,1.95,-0.1),['over','grip','apart']],
+      ['<b>T2</b> Collar <i>(rotates with the handle)</i>',new THREE.Vector3(0.95,0.5,0.7),ALL],
+      ['<b>T3</b> Handle <i>(sweeps off→cold→hot)</i>',new THREE.Vector3(-2.0,0.25,1.3),['over','click','apart']],
+      ['<b>P1</b> Anchor ring <i>(fixed to the plate)</i>',new THREE.Vector3(1.55,-0.9,0.3),['over','grip','click','apart']],
+      ['<b>P2</b> Coupler <i>(clamps the rotating collar)</i>',new THREE.Vector3(1.2,1.0,0.6),['over','grip','apart']],
+      ['<b>P3</b> Follower + spring ball',new THREE.Vector3(-2.05,-0.5,0.4),['over','click','apart']],
+      ['<b>P4</b> Saved-spot notch <i>(slide &amp; lock)</i>',new THREE.Vector3(sx-0.2,sy-0.3,0.1),['over','click','apart']],
     ];
     const lblEls=L.map(d=>{const e=document.createElement('div');e.className='lbl';e.innerHTML=d[0];document.getElementById('labels').appendChild(e);return{el:e,pos:d[1],modes:d[2]};});
 
@@ -334,23 +309,21 @@
     // each mode glides the camera + model to frame its own mechanism (ry=null → leave spin alone)
     let camAnim=false; const camGoal={rx:-0.18,ry:-0.55,dist:8.9};
     function frameMode(m){
-      if(m==='grip'){       camGoal.rx=-0.10; camGoal.ry=-0.30; camGoal.dist=6.7; }
-      else if(m==='click'){ camGoal.rx=-0.07; camGoal.ry=0.05;  camGoal.dist=7.2; }
-      else if(m==='apart'){ camGoal.rx=-0.16; camGoal.ry=-0.62; camGoal.dist=11.2; }
-      else {                camGoal.rx=-0.18; camGoal.ry=null;  camGoal.dist=8.9; } // overview: keep auto-spin
+      if(m==='grip'){       camGoal.rx=-0.10; camGoal.ry=-0.22; camGoal.dist=6.8; }
+      else if(m==='click'){ camGoal.rx=-0.05; camGoal.ry=-0.02; camGoal.dist=7.0; } // face-on, to read the rotary sweep
+      else if(m==='apart'){ camGoal.rx=-0.14; camGoal.ry=-0.5;  camGoal.dist=10.8; }
+      else {                camGoal.rx=-0.12; camGoal.ry=null;  camGoal.dist=8.6; } // overview: keep auto-spin
       camAnim=true;
     }
     function setBtn(id){['bOver','bGrip','bClick','bApart'].forEach(x=>document.getElementById(x).classList.toggle('on',x===id));}
     const exEl=document.getElementById('explain');
-    function setMode(m){ mode=m; piv.rotation.z=0.55; clkPhase=0; gripT=0; liner.scale.set(1,1,1);
+    function setMode(m){ mode=m; hA=0.55; clkPhase=0; gripT=0; coupler.scale.set(1,1,1);
       gripArrows.forEach(a=>a.visible=(m==='grip')); swing.visible=(m==='click');
-      housing.material.opacity=(m==='grip'||m==='click')?0.4:1.0;
-      liner.material.opacity=(m==='click')?0.22:1.0; // fade the grip liner so the click parts show through
       frameMode(m);
       if(m==='over'){setBtn('bOver');autoRot=true;exEl.textContent='Drag to spin · pinch or scroll to zoom in';}
-      if(m==='grip'){setBtn('bGrip');autoRot=false;exEl.textContent='Turn the dial (P3) → the soft liner (P2) squeezes inward and clamps onto the collar (T2).';}
-      if(m==='click'){setBtn('bClick');autoRot=false;exEl.textContent='Swivel the handle (T3) → the yoke (P6) turns the index ring → the follower (P5) drops into your saved notch (P4) = click.';}
-      if(m==='apart'){setBtn('bApart');autoRot=false;exEl.textContent='Every part pulled apart — note P5/P6 (follower + yoke) are separate from the handle, not attached to it.';}
+      if(m==='grip'){setBtn('bGrip');autoRot=false;exEl.textContent='Our device anchors to the FIXED plate (P1) and clamps the ROTATING collar (P2). Only the plate stays still.';}
+      if(m==='click'){setBtn('bClick');autoRot=false;exEl.textContent='Sweep the handle (T3); the collar + coupler turn with it; the follower (P3) drops into your saved notch (P4) = click.';}
+      if(m==='apart'){setBtn('bApart');autoRot=false;exEl.textContent='Pulled apart: the plate (T1) is fixed; the collar+handle rotate; our anchor stays put while the coupler turns with the collar.';}
     }
     document.getElementById('bOver').onclick=()=>setMode('over');
     document.getElementById('bGrip').onclick=()=>setMode('grip');
@@ -384,7 +357,7 @@
     window.addEventListener('resize',resize);resize();
 
     // ---- animation ----
-    let clkPhase=0, gripT=0, pulse=0, tWait=0; const awayA=1.6;
+    let clkPhase=0, gripT=0, pulse=0, tWait=0, hA=0.55; const awayA=1.75;
     const clickEl=document.getElementById('click'); const v=new THREE.Vector3();
     function ease(c,t,k){return c+(t-c)*k;}
     const _cd=new THREE.Vector3();
@@ -406,23 +379,22 @@
       const eT=(mode==='apart')?1:0; explodeF+=(eT-explodeF)*0.12;
       ex.forEach(o=>o[0].position.copy(o[0].userData.base).addScaledVector(new THREE.Vector3(...o[1]),explodeF));
 
-      if(mode==='grip'){ gripT+=0.03; const s=1.0-0.14*(0.5+0.5*Math.sin(gripT)); liner.scale.set(s,s,1);
-        dial.rotation.z+=0.05; const aL=0.55+0.25*(0.5+0.5*Math.sin(gripT));
-        gripArrows.forEach(a=>a.setLength(aL,0.28,0.2)); }
+      if(mode==='grip'){ gripT+=0.05; const s=1.0+0.045*Math.sin(gripT*2); coupler.scale.set(s,s,1);
+        gripArrows.forEach(a=>a.setLength(0.4+0.12*(0.5+0.5*Math.sin(gripT)),0.22,0.16)); }
       else if(mode==='click'){
-        if(clkPhase===0){ piv.rotation.z=ease(piv.rotation.z,awayA,0.05); if(Math.abs(piv.rotation.z-awayA)<0.04)clkPhase=1; }
-        else if(clkPhase===1){ piv.rotation.z=ease(piv.rotation.z,0.55,0.05);
-          ball.position.z=0; if(Math.abs(piv.rotation.z-0.55)<0.02){clkPhase=2;pulse=1;} }
-        else if(clkPhase===2){ ball.position.z=-0.05; pulse=Math.max(0,pulse-0.018); if(pulse<=0){ball.position.z=0;clkPhase=3;tWait=0;} }
+        if(clkPhase===0){ hA=ease(hA,awayA,0.05); if(Math.abs(hA-awayA)<0.04)clkPhase=1; }
+        else if(clkPhase===1){ hA=ease(hA,0.55,0.05);
+          ball.position.z=-0.26; if(Math.abs(hA-0.55)<0.02){clkPhase=2;pulse=1;} }
+        else if(clkPhase===2){ ball.position.z=-0.32; pulse=Math.max(0,pulse-0.018); if(pulse<=0){ball.position.z=-0.26;clkPhase=3;tWait=0;} }
         else if(clkPhase===3){ tWait++; if(tWait>40)clkPhase=0; }
-      } else { piv.rotation.z=0.55; ball.position.z=0; }
-      idx.rotation.z=piv.rotation.z; // the yoke ties the index ring to the handle's swivel
+      } else { hA=0.55; ball.position.z=-0.26; }
+      tapRot.rotation.z=hA; coupler.rotation.z=hA; // collar + handle + coupler all sweep together
 
       // notch glow + click text
       socket.material.color.setHex(pulse>0.1?0x1f7a86:0x123036);
       socket.material.emissive.setRGB(0,0.55*pulse,0.62*pulse);
       clickEl.style.opacity=(mode==='click')?pulse:0;
-      if(pulse>0){ model.updateMatrixWorld(); v.set(sx,sy,1.86).applyMatrix4(model.matrixWorld).project(camera);
+      if(pulse>0){ model.updateMatrixWorld(); v.set(sx,sy,0.38).applyMatrix4(model.matrixWorld).project(camera);
         clickEl.style.left=((v.x*0.5+0.5)*wrap.clientWidth)+'px'; clickEl.style.top=((-v.y*0.5+0.5)*wrap.clientHeight-30)+'px'; }
 
       model.updateMatrixWorld();
