@@ -221,11 +221,11 @@
     const chrome  =new THREE.MeshStandardMaterial({color:0xe1e6ec,metalness:0.85,roughness:0.26});
     const chromeDk=new THREE.MeshStandardMaterial({color:0xc4ccd6,metalness:0.85,roughness:0.32});
     const plastic =new THREE.MeshStandardMaterial({color:0xeef2f6,metalness:0.12,roughness:0.45,transparent:true,opacity:1});
-    const soft    =new THREE.MeshStandardMaterial({color:0x16bcc8,metalness:0.0,roughness:0.9});
+    const soft    =new THREE.MeshStandardMaterial({color:0x16bcc8,metalness:0.0,roughness:0.9,transparent:true,opacity:1});
     const accent  =new THREE.MeshStandardMaterial({color:0x0a5f69,metalness:0.25,roughness:0.5});
-    const ballMat =new THREE.MeshStandardMaterial({color:0xf7a14a,metalness:0.3,roughness:0.35});
+    const ballMat =new THREE.MeshStandardMaterial({color:0xff9d3c,metalness:0.3,roughness:0.3,emissive:0x6b3408});
     const trackMat=new THREE.MeshStandardMaterial({color:0x9aa6b3,metalness:0.6,roughness:0.4});
-    const socketM =new THREE.MeshStandardMaterial({color:0x123036,metalness:0.4,roughness:0.6});
+    const socketM =new THREE.MeshStandardMaterial({color:0x123036,metalness:0.4,roughness:0.6,emissive:0x000000});
     const wallMat =new THREE.MeshStandardMaterial({color:0x262b34,metalness:0.0,roughness:0.97});
     const Z=Math.PI/2;
 
@@ -248,7 +248,7 @@
 
     // T3 — lever, swivels about the same axis the device's follower (P5) tracks.
     // T4 — the cartridge is the standardised 35/40mm stem hidden inside the collar (not modelled, called out only in labels).
-    const piv=new THREE.Group(); piv.position.set(0,0,1.5); piv.rotation.z=0.55; model.add(piv);
+    const piv=new THREE.Group(); piv.position.set(0,0,1.9); piv.rotation.z=0.55; model.add(piv);
     piv.add(new THREE.Mesh(new THREE.SphereGeometry(0.17,20,16),chrome)).position.set(0,0,0.05); // pivot cap
     const shaft=new THREE.Mesh(new THREE.CylinderGeometry(0.10,0.17,2.3,24),chrome);
     shaft.rotation.z=-Z; shaft.position.set(-1.2,0,0); piv.add(shaft);
@@ -258,7 +258,7 @@
     // P5 — follower arm + spring-loaded ball (the nub), rides the device's detent track as the lever swivels
     const arm=new THREE.Mesh(new THREE.BoxGeometry(1.0,0.14,0.14),accent); arm.position.set(-0.95,0,0); piv.add(arm);
     const ballR=1.42; // matches the track/notch radius below
-    const ball=new THREE.Mesh(new THREE.SphereGeometry(0.17,20,16),ballMat); ball.position.set(-ballR,0,0); piv.add(ball);
+    const ball=new THREE.Mesh(new THREE.SphereGeometry(0.26,22,18),ballMat); ball.position.set(-ballR,0,0); piv.add(ball);
     // small compression spring behind the ball, coiled along the direction it presses
     (function(){const pts=[];for(let i=0;i<=40;i++){const t=i/40,a=t*Math.PI*2*5;
         pts.push(new THREE.Vector3(-1.02-t*0.32, Math.cos(a)*0.06, Math.sin(a)*0.06));}
@@ -275,10 +275,11 @@
     const dial=new THREE.Group(); dial.position.set(1.18,1.18,1.5); model.add(dial);
     dial.add(new THREE.Mesh(new THREE.CylinderGeometry(0.34,0.34,0.4,24),accent).rotateX(Z));
     for(let i=0;i<12;i++){const r=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.17,0.34),accent);const a=i/12*Math.PI*2;r.position.set(Math.cos(a)*0.34,Math.sin(a)*0.34,0);r.rotation.z=a;dial.add(r);}
-    // P4 — detent track + the saved-spot notch
-    const track=add(new THREE.TorusGeometry(ballR,0.06,12,60),trackMat,[0,0,1.5]);
+    // P4 — detent track + the saved-spot notch. Sits proud on the front face (z=1.9), on top of the collar,
+    // so the follower ball riding it is clearly visible instead of buried inside the housing donut.
+    const track=add(new THREE.TorusGeometry(ballR,0.07,12,60),trackMat,[0,0,1.9]);
     const sA=0.55; const sx=-ballR*Math.cos(sA), sy=-ballR*Math.sin(sA);
-    const socket=add(new THREE.SphereGeometry(0.22,18,14),socketM,[sx,sy,1.55]); // the notch/cup, recessed slightly deeper than the track
+    const socket=add(new THREE.SphereGeometry(0.24,18,14),socketM,[sx,sy,1.86]); // the notch/cup, recessed just behind the track
 
     // explode — each part flies to its own distinct spot so "take apart" is legible
     const ex=[
@@ -300,29 +301,42 @@
       const o=new THREE.Vector3(d[0]*2.35,d[1]*2.35,1.0);
       const a=new THREE.ArrowHelper(dir,o,0.7,0xf7a14a,0.28,0.2); a.visible=false; model.add(a); gripArrows.push(a);});
     // swing arrow (click) — hints "move the lever away, then back"
-    const swing=new THREE.ArrowHelper(new THREE.Vector3(0,-1,0),new THREE.Vector3(-2.0,0.5,1.5),0.9,0xf7a14a,0.3,0.22);
+    const swing=new THREE.ArrowHelper(new THREE.Vector3(0,-1,0),new THREE.Vector3(-2.0,0.5,1.95),0.9,0xf7a14a,0.3,0.22);
     swing.visible=false; model.add(swing);
 
     // labels — T#/P# codes match the research doc's part naming
+    // each label lists the modes it should appear in, so zoomed-in views only show their own parts
+    const ALL=['over','grip','click','apart'];
     const L=[
-      ['<b>T1</b> Escutcheon <i>(wall plate)</i>',new THREE.Vector3(2.1,2.1,0.15)],
-      ['<b>T2</b> Collar <i>(stays still — we clip here)</i>',new THREE.Vector3(1.0,-0.5,0.9)],
-      ['<b>T3</b> Lever <i>(swivels, carries P5)</i>',new THREE.Vector3(-2.0,0,1.92)],
-      ['<b>P2</b> Soft liner <i>(clamps onto T2)</i>',new THREE.Vector3(-1.0,0.75,1.05)],
-      ['<b>P3</b> Tightening dial',new THREE.Vector3(1.35,1.35,1.55)],
-      ['<b>P1</b> Outer housing',new THREE.Vector3(0,1.74,1.25)],
-      ['<b>P5</b> Follower + spring ball',new THREE.Vector3(-1.6,-0.15,1.42)],
-      ['<b>P4</b> Saved-spot notch <i>(your detent)</i>',new THREE.Vector3(sx-0.2,sy-0.25,1.6)],
+      ['<b>T1</b> Escutcheon <i>(wall plate)</i>',new THREE.Vector3(2.1,2.1,0.15),['over','apart']],
+      ['<b>T2</b> Collar <i>(stays still — we clip here)</i>',new THREE.Vector3(1.0,-0.5,0.9),ALL],
+      ['<b>T3</b> Lever <i>(swivels, carries P5)</i>',new THREE.Vector3(-2.15,1.05,2.0),['over','click','apart']],
+      ['<b>P2</b> Soft liner <i>(clamps onto T2)</i>',new THREE.Vector3(-1.0,0.75,1.05),['over','grip','apart']],
+      ['<b>P3</b> Tightening dial',new THREE.Vector3(1.35,1.35,1.55),['over','grip','apart']],
+      ['<b>P1</b> Outer housing',new THREE.Vector3(0,1.74,1.25),['over','apart']],
+      ['<b>P5</b> Follower + spring ball',new THREE.Vector3(-2.0,0.55,1.9),['over','click','apart']],
+      ['<b>P4</b> Saved-spot notch <i>(your detent)</i>',new THREE.Vector3(sx-0.2,sy-0.25,1.9),['over','click','apart']],
     ];
-    const lblEls=L.map(d=>{const e=document.createElement('div');e.className='lbl';e.innerHTML=d[0];document.getElementById('labels').appendChild(e);return{el:e,pos:d[1]};});
+    const lblEls=L.map(d=>{const e=document.createElement('div');e.className='lbl';e.innerHTML=d[0];document.getElementById('labels').appendChild(e);return{el:e,pos:d[1],modes:d[2]};});
 
     // ---- state ----
     let mode='over', showLbl=true, autoRot=true, explodeF=0;
+    // each mode glides the camera + model to frame its own mechanism (ry=null → leave spin alone)
+    let camAnim=false; const camGoal={rx:-0.18,ry:-0.55,dist:8.9};
+    function frameMode(m){
+      if(m==='grip'){       camGoal.rx=-0.10; camGoal.ry=-0.30; camGoal.dist=6.7; }
+      else if(m==='click'){ camGoal.rx=-0.07; camGoal.ry=0.05;  camGoal.dist=7.2; }
+      else if(m==='apart'){ camGoal.rx=-0.16; camGoal.ry=-0.62; camGoal.dist=11.2; }
+      else {                camGoal.rx=-0.18; camGoal.ry=null;  camGoal.dist=8.9; } // overview: keep auto-spin
+      camAnim=true;
+    }
     function setBtn(id){['bOver','bGrip','bClick','bApart'].forEach(x=>document.getElementById(x).classList.toggle('on',x===id));}
     const exEl=document.getElementById('explain');
     function setMode(m){ mode=m; piv.rotation.z=0.55; clkPhase=0; gripT=0; liner.scale.set(1,1,1);
       gripArrows.forEach(a=>a.visible=(m==='grip')); swing.visible=(m==='click');
-      housing.material.opacity=(m==='grip'||m==='click')?0.45:1.0;
+      housing.material.opacity=(m==='grip'||m==='click')?0.4:1.0;
+      liner.material.opacity=(m==='click')?0.22:1.0; // fade the grip liner so the click parts show through
+      frameMode(m);
       if(m==='over'){setBtn('bOver');autoRot=true;exEl.textContent='Drag to spin · pinch or scroll to zoom in';}
       if(m==='grip'){setBtn('bGrip');autoRot=false;exEl.textContent='Turn the dial (P3) → the soft liner (P2) squeezes inward and clamps onto the collar (T2).';}
       if(m==='click'){setBtn('bClick');autoRot=false;exEl.textContent='The lever (T3) swivels; the spring-loaded ball (P5) rides the track and drops into the notch (P4) = click.';}
@@ -348,7 +362,7 @@
     // ---- pointer: rotate (1 finger) + pinch zoom (2 fingers) ----
     const el=renderer.domElement, ptrs=new Map(); let lx=0,ly=0,pinchD=0;
     function dolly(f){const dir=new THREE.Vector3().subVectors(camera.position,target);let d=dir.length()*f;d=Math.max(3.2,Math.min(15,d));dir.normalize().multiplyScalar(d);camera.position.copy(target).add(dir);camera.lookAt(target);}
-    el.addEventListener('pointerdown',e=>{el.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});autoRot=false;if(ptrs.size===1){lx=e.clientX;ly=e.clientY;}if(ptrs.size===2){const p=[...ptrs.values()];pinchD=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);}});
+    el.addEventListener('pointerdown',e=>{el.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});autoRot=false;camAnim=false;if(ptrs.size===1){lx=e.clientX;ly=e.clientY;}if(ptrs.size===2){const p=[...ptrs.values()];pinchD=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);}});
     el.addEventListener('pointermove',e=>{if(!ptrs.has(e.pointerId))return;ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
       if(ptrs.size===1){model.rotation.y+=(e.clientX-lx)*0.008;model.rotation.x=Math.max(-1.1,Math.min(1.1,model.rotation.x+(e.clientY-ly)*0.008));lx=e.clientX;ly=e.clientY;}
       else if(ptrs.size===2){const p=[...ptrs.values()];const d=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);if(pinchD>0)dolly(pinchD/d);pinchD=d;}});
@@ -363,8 +377,20 @@
     let clkPhase=0, gripT=0, pulse=0, tWait=0; const awayA=1.6;
     const clickEl=document.getElementById('click'); const v=new THREE.Vector3();
     function ease(c,t,k){return c+(t-c)*k;}
+    const _cd=new THREE.Vector3();
     function loop(){
       requestAnimationFrame(loop);
+
+      // glide camera/orientation to the active mode's framing (until it settles or the user grabs it)
+      if(camAnim && ptrs.size===0){
+        model.rotation.x+=(camGoal.rx-model.rotation.x)*0.08;
+        if(camGoal.ry!==null) model.rotation.y+=(camGoal.ry-model.rotation.y)*0.08;
+        const cur=camera.position.distanceTo(target), nd=cur+(camGoal.dist-cur)*0.08;
+        _cd.subVectors(camera.position,target).normalize().multiplyScalar(nd);
+        camera.position.copy(target).add(_cd); camera.lookAt(target);
+        const ryDone=(camGoal.ry===null)||Math.abs(camGoal.ry-model.rotation.y)<0.01;
+        if(ryDone && Math.abs(camGoal.dist-nd)<0.03 && Math.abs(camGoal.rx-model.rotation.x)<0.01) camAnim=false;
+      }
       if(autoRot && ptrs.size===0) model.rotation.y+=0.0035;
 
       const eT=(mode==='apart')?1:0; explodeF+=(eT-explodeF)*0.12;
@@ -377,18 +403,19 @@
         if(clkPhase===0){ piv.rotation.z=ease(piv.rotation.z,awayA,0.05); if(Math.abs(piv.rotation.z-awayA)<0.04)clkPhase=1; }
         else if(clkPhase===1){ piv.rotation.z=ease(piv.rotation.z,0.55,0.05);
           ball.position.z=0; if(Math.abs(piv.rotation.z-0.55)<0.02){clkPhase=2;pulse=1;} }
-        else if(clkPhase===2){ ball.position.z=0.06; pulse=Math.max(0,pulse-0.018); if(pulse<=0){ball.position.z=0;clkPhase=3;tWait=0;} }
+        else if(clkPhase===2){ ball.position.z=-0.05; pulse=Math.max(0,pulse-0.018); if(pulse<=0){ball.position.z=0;clkPhase=3;tWait=0;} }
         else if(clkPhase===3){ tWait++; if(tWait>40)clkPhase=0; }
       } else { piv.rotation.z=0.55; ball.position.z=0; }
 
       // notch glow + click text
       socket.material.color.setHex(pulse>0.1?0x1f7a86:0x123036);
+      socket.material.emissive.setRGB(0,0.55*pulse,0.62*pulse);
       clickEl.style.opacity=(mode==='click')?pulse:0;
-      if(pulse>0){ model.updateMatrixWorld(); v.set(sx,sy,1.55).applyMatrix4(model.matrixWorld).project(camera);
+      if(pulse>0){ model.updateMatrixWorld(); v.set(sx,sy,1.86).applyMatrix4(model.matrixWorld).project(camera);
         clickEl.style.left=((v.x*0.5+0.5)*wrap.clientWidth)+'px'; clickEl.style.top=((-v.y*0.5+0.5)*wrap.clientHeight-30)+'px'; }
 
       model.updateMatrixWorld();
-      lblEls.forEach(o=>{ if(!showLbl){o.el.style.opacity=0;return;}
+      lblEls.forEach(o=>{ if(!showLbl||!o.modes.includes(mode)){o.el.style.opacity=0;return;}
         v.copy(o.pos).applyMatrix4(model.matrixWorld).project(camera);
         if(v.z>1){o.el.style.opacity=0;return;}
         o.el.style.opacity=0.96; o.el.style.left=((v.x*0.5+0.5)*wrap.clientWidth)+'px'; o.el.style.top=((-v.y*0.5+0.5)*wrap.clientHeight)+'px'; });
