@@ -74,21 +74,24 @@
 <div id="explain">Drag to spin · pinch or scroll to zoom in</div>
 <div id="legend">
   <span class="grp">Tap (existing, not ours)</span>
-  <b>T1</b> Wall plate — FIXED (only still part)<br>
+  <b>T1</b> Wall plate — FIXED<br>
   <b>T2</b> Collar — rotates with the handle<br>
   <b>T3</b> Handle — sweeps off→cold→hot<br>
   <b>T4</b> Cartridge — inside the wall
-  <span class="grp">Our device</span>
-  <b>P1</b> Anchor ring — fixed to the plate<br>
-  <b>P2</b> Coupler — clamps the rotating collar<br>
-  <b>P3</b> Follower + spring ball<br>
-  <b>P4</b> Saved-spot notch — slide &amp; lock
+  <span class="grp">Option C — gravity (no install)</span>
+  <b>C1</b> Gravity ring — weighted, stays vertical<br>
+  <b>C2</b> Driven ring — clamps collar, turns<br>
+  <b>C3/C4</b> Follower ball + saved notch
+  <span class="grp">Option B — behind handle (~5 min)</span>
+  <b>B1</b> Fixed ring — keyed to cartridge<br>
+  <b>B2</b> Driven ring — turns with handle<br>
+  <b>B3</b> Follower + notch (the click)
 </div>
 <div id="hint">pinch / scroll to zoom into the parts</div>
 <div id="bar">
   <button class="btn on" id="bOver">Overview</button>
-  <button class="btn" id="bGrip">How it mounts</button>
-  <button class="btn" id="bClick">How it clicks</button>
+  <button class="btn" id="bGrip">Option C · gravity</button>
+  <button class="btn" id="bClick">Option B · behind handle</button>
   <button class="btn" id="bApart">Take apart</button>
   <button class="btn" id="bStory">Product story</button>
   <button class="btn" id="bLeg">Legend</button>
@@ -251,83 +254,97 @@
     tapRot.add(new THREE.Mesh(new THREE.SphereGeometry(0.07,12,10),new THREE.MeshStandardMaterial({color:0xd83a2c,emissive:0x3a0a06,roughness:0.5}))).position.set(-1.62,0.14,1.33); // red (hot)
     tapRot.add(new THREE.Mesh(new THREE.SphereGeometry(0.07,12,10),new THREE.MeshStandardMaterial({color:0x2f63d8,emissive:0x06103a,roughness:0.5}))).position.set(-1.62,-0.14,1.33); // blue (cold)
 
-    // ============ OUR DEVICE — corrected for THIS tap (anchor to the fixed plate, couple to the rotating collar) ============
+    // ============ TWO SOLUTIONS for this rotary valve (toggle below) ============
+    // Both put a settable spring-ball DETENT between a part that turns with the handle and a part that stays
+    // still. The ONLY difference is HOW the "still" part is held still.
     const idxMat=new THREE.MeshStandardMaterial({color:0x6f93b4,metalness:0.5,roughness:0.42});
-    const ringR=1.5; // radius the follower ball rides at
+    const wMat=new THREE.MeshStandardMaterial({color:0x3f4854,metalness:0.7,roughness:0.5});
+    const sA=0.55;
 
-    // P1 — anchor ring: fixed to the escutcheon PLATE (the only still part). Holds the saved-spot notch. Does NOT rotate.
-    const anchor=new THREE.Group(); anchor.position.z=0.34; model.add(anchor);
-    anchor.add(new THREE.Mesh(new THREE.TorusGeometry(1.16,0.12,16,44),plastic));
-    const track=new THREE.Mesh(new THREE.TorusGeometry(ringR,0.07,12,60),trackMat); anchor.add(track);
-    [[1,1],[1,-1],[-1,-0.15]].forEach(d=>{const p=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,0.5,10),idxMat);p.rotation.x=Z;p.position.set(d[0]*0.95,d[1]*0.95,-0.22);anchor.add(p);}); // standoffs that fix it to the plate
-    const sA=0.55; const sx=-ringR*Math.cos(sA), sy=-ringR*Math.sin(sA);
-    const socket=new THREE.Mesh(new THREE.SphereGeometry(0.25,18,14),socketM); socket.position.set(sx,sy,0.04); anchor.add(socket);
+    // ---------- OPTION C — gravity ring on the collar (no install; the user's idea) ----------
+    const ringR=1.4; const sx=-ringR*Math.cos(sA), sy=-ringR*Math.sin(sA);
+    const devC=new THREE.Group(); model.add(devC);
+    // gravity ring: spins FREELY on the collar with a WEIGHT at the bottom, so gravity keeps it vertical = the "still" part
+    const gravRing=new THREE.Group(); gravRing.position.z=0.72; devC.add(gravRing);
+    gravRing.add(new THREE.Mesh(new THREE.TorusGeometry(ringR,0.09,14,52),trackMat));
+    gravRing.add(new THREE.Mesh(new THREE.BoxGeometry(0.18,0.6,0.18),wMat)).position.set(0,-(ringR+0.3),0);  // pendulum arm
+    gravRing.add(new THREE.Mesh(new THREE.BoxGeometry(0.8,0.55,0.45),wMat)).position.set(0,-(ringR+0.78),0); // the weight
+    const socketC=new THREE.Mesh(new THREE.SphereGeometry(0.24,18,14),socketM); socketC.position.set(sx,sy,0.02); gravRing.add(socketC);
+    // driven ring: clamps the rotating collar, turns with the handle, carries the follower ball
+    const drivenC=new THREE.Group(); drivenC.position.z=0.72; drivenC.rotation.z=0.55; devC.add(drivenC);
+    drivenC.add(new THREE.Mesh(new THREE.TorusGeometry(0.98,0.1,14,40),idxMat));
+    drivenC.add(new THREE.Mesh(new THREE.BoxGeometry(0.46,0.13,0.13),idxMat)).position.set(-1.19,0,0);
+    const ballC=new THREE.Mesh(new THREE.SphereGeometry(0.21,22,18),ballMat); ballC.position.set(-ringR,0,0); drivenC.add(ballC);
 
-    // P2 — coupler cuff: clamps the ROTATING collar (T2), so it turns with the handle. Carries the follower.
-    const coupler=new THREE.Group(); coupler.position.z=0.6; coupler.rotation.z=0.55; model.add(coupler);
-    coupler.add(new THREE.Mesh(new THREE.TorusGeometry(0.99,0.1,14,40),idxMat));
-    const arm=new THREE.Mesh(new THREE.BoxGeometry(0.6,0.14,0.14),idxMat); arm.position.set(-1.2,0,-0.18); coupler.add(arm);
-    // P3 — follower + spring-loaded ball, rides the anchor's track and drops into the notch at your saved angle
-    const ball=new THREE.Mesh(new THREE.SphereGeometry(0.22,22,18),ballMat); ball.position.set(-ringR,0,-0.26); coupler.add(ball);
-    (function(){const pts=[];for(let i=0;i<=36;i++){const t=i/36,a=t*Math.PI*2*5; pts.push(new THREE.Vector3(-1.0-t*0.28, Math.cos(a)*0.05, -0.26+Math.sin(a)*0.05));}
-      coupler.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),50,0.02,7,false),trackMat));})();
+    // ---------- OPTION B — ring behind the handle, keyed to the fixed cartridge (~5-min install; most reliable) ----------
+    const ringRB=1.05; const sxB=-ringRB*Math.cos(sA), syB=-ringRB*Math.sin(sA);
+    const devB=new THREE.Group(); devB.visible=false; model.add(devB);
+    // fixed ring: keyed to the cartridge under the handle, so it cannot rotate (just like the factory limit stop)
+    const fixedB=new THREE.Group(); fixedB.position.z=1.0; devB.add(fixedB);
+    fixedB.add(new THREE.Mesh(new THREE.TorusGeometry(ringRB,0.12,14,44),plastic));
+    fixedB.add(new THREE.Mesh(new THREE.BoxGeometry(0.18,0.28,0.5),idxMat)).position.set(0,0,-0.3); // key into the cartridge
+    const socketB=new THREE.Mesh(new THREE.SphereGeometry(0.2,18,14),socketM); socketB.position.set(sxB,syB,0.02); fixedB.add(socketB);
+    // driven ring: turns with the handle, carries the follower ball
+    const drivenB=new THREE.Group(); drivenB.position.z=1.16; drivenB.rotation.z=0.55; devB.add(drivenB);
+    drivenB.add(new THREE.Mesh(new THREE.TorusGeometry(ringRB,0.09,14,40),idxMat));
+    const ballB=new THREE.Mesh(new THREE.SphereGeometry(0.18,20,16),ballMat); ballB.position.set(-ringRB,0,-0.14); drivenB.add(ballB);
 
-    // explode — top-level groups fly apart so "take apart" is legible
-    const ex=[
-      [wall,[0,0,-3.2]],
-      [plate,[0,0,-1.4]],
-      [anchor,[0,1.5,1.0]],
-      [coupler,[0,-1.5,2.3]],
-      [tapRot,[0,0,4.2]],
-    ];
-    ex.forEach(o=>o[0].userData.base=o[0].position.clone());
+    // explode — tap parts + the active variant's parts fly apart
+    const exTap=[[wall,[0,0,-3.0]],[plate,[0,0,-1.3]],[tapRot,[0,0,3.8]]];
+    const exC=[[gravRing,[0,1.6,1.4]],[drivenC,[0,-1.6,2.5]]];
+    const exB=[[fixedB,[0,1.5,1.4]],[drivenB,[0,-1.5,2.5]]];
+    [...exTap,...exC,...exB].forEach(o=>o[0].userData.base=o[0].position.clone());
 
-    // mount arrows — the coupler clamps inward onto the rotating collar
-    const gripArrows=[];
-    [[1,0],[-1,0],[0,1],[0,-1]].forEach(d=>{const dir=new THREE.Vector3(-d[0],-d[1],0).normalize();
-      const o=new THREE.Vector3(d[0]*1.5,d[1]*1.5,0.6);
-      const a=new THREE.ArrowHelper(dir,o,0.5,0xf7a14a,0.22,0.16); a.visible=false; model.add(a); gripArrows.push(a);});
     // swing arrow (click) — hints "sweep the handle away, then back"
     const swing=new THREE.ArrowHelper(new THREE.Vector3(0,-1,0),new THREE.Vector3(-2.0,0.8,1.2),0.8,0xf7a14a,0.28,0.2);
     swing.visible=false; model.add(swing);
 
-    // labels — each lists the modes it appears in, so zoomed-in views only show their own parts
-    const ALL=['over','grip','click','apart'];
+    // labels — each lists the modes it appears in
+    const ALL=['over','optC','optB','apart'];
+    // [html, pos, modes, dev]  — dev: 'C'/'B' shows only when that variant is active; null = shared tap part
     const L=[
-      ['<b>T1</b> Wall plate <i>(fixed — only still part)</i>',new THREE.Vector3(1.95,1.95,-0.1),['over','grip','apart']],
-      ['<b>T2</b> Collar <i>(rotates with the handle)</i>',new THREE.Vector3(0.95,0.5,0.7),ALL],
-      ['<b>T3</b> Handle <i>(sweeps off→cold→hot)</i>',new THREE.Vector3(-2.0,0.25,1.3),['over','click','apart']],
-      ['<b>P1</b> Anchor ring <i>(fixed to the plate)</i>',new THREE.Vector3(1.55,-0.9,0.3),['over','grip','click','apart']],
-      ['<b>P2</b> Coupler <i>(clamps the rotating collar)</i>',new THREE.Vector3(1.2,1.0,0.6),['over','grip','apart']],
-      ['<b>P3</b> Follower + spring ball',new THREE.Vector3(-2.05,-0.5,0.4),['over','click','apart']],
-      ['<b>P4</b> Saved-spot notch <i>(slide &amp; lock)</i>',new THREE.Vector3(sx-0.2,sy-0.3,0.1),['over','click','apart']],
+      ['<b>T1</b> Wall plate <i>(fixed)</i>',new THREE.Vector3(1.95,1.95,-0.1),['over','apart'],null],
+      ['<b>T2</b> Collar <i>(rotates with the handle)</i>',new THREE.Vector3(0.95,0.5,0.7),ALL,null],
+      ['<b>T3</b> Handle <i>(sweeps off→cold→hot)</i>',new THREE.Vector3(-2.0,0.25,1.3),['over','optC','optB','apart'],null],
+      // Option C — gravity ring
+      ['<b>C1</b> Gravity ring <i>(weighted → stays vertical = the still part)</i>',new THREE.Vector3(1.55,0.7,0.75),['over','optC','apart'],'C'],
+      ['<b>↓</b> Weight <i>(keeps the ring vertical)</i>',new THREE.Vector3(0.0,-2.05,0.7),['over','optC','apart'],'C'],
+      ['<b>C2</b> Driven ring <i>(clamps collar, turns w/ handle)</i>',new THREE.Vector3(-1.75,0.95,0.72),['optC','apart'],'C'],
+      ['<b>C3</b> Follower ball',new THREE.Vector3(-1.95,-0.55,0.72),['optC'],'C'],
+      ['<b>C4</b> Saved-spot notch <i>(slide &amp; lock)</i>',new THREE.Vector3(sx-0.25,sy-0.3,0.74),['optC'],'C'],
+      // Option B — behind the handle
+      ['<b>B1</b> Fixed ring <i>(keyed to the cartridge = the still part)</i>',new THREE.Vector3(1.45,0.75,1.0),['optB','apart'],'B'],
+      ['<b>B2</b> Driven ring <i>(turns with the handle)</i>',new THREE.Vector3(-1.6,0.75,1.16),['optB','apart'],'B'],
+      ['<b>B3</b> Follower + notch <i>(your click)</i>',new THREE.Vector3(sxB-0.3,syB-0.3,1.02),['optB'],'B'],
     ];
-    const lblEls=L.map(d=>{const e=document.createElement('div');e.className='lbl';e.innerHTML=d[0];document.getElementById('labels').appendChild(e);return{el:e,pos:d[1],modes:d[2]};});
+    const lblEls=L.map(d=>{const e=document.createElement('div');e.className='lbl';e.innerHTML=d[0];document.getElementById('labels').appendChild(e);return{el:e,pos:d[1],modes:d[2],dev:d[3]};});
 
     // ---- state ----
     let mode='over', showLbl=true, autoRot=true, explodeF=0;
     // each mode glides the camera + model to frame its own mechanism (ry=null → leave spin alone)
     let camAnim=false; const camGoal={rx:-0.18,ry:-0.55,dist:8.9};
     function frameMode(m){
-      if(m==='grip'){       camGoal.rx=-0.10; camGoal.ry=-0.22; camGoal.dist=6.8; }
-      else if(m==='click'){ camGoal.rx=-0.05; camGoal.ry=-0.02; camGoal.dist=7.0; } // face-on, to read the rotary sweep
-      else if(m==='apart'){ camGoal.rx=-0.14; camGoal.ry=-0.5;  camGoal.dist=10.8; }
-      else {                camGoal.rx=-0.12; camGoal.ry=null;  camGoal.dist=8.6; } // overview: keep auto-spin
+      if(m==='optC'){      camGoal.rx=-0.05; camGoal.ry=-0.02; camGoal.dist=8.4; } // see the whole ring + the weight below
+      else if(m==='optB'){ camGoal.rx=-0.06; camGoal.ry=-0.05; camGoal.dist=6.6; } // zoom to the small ring under the handle
+      else if(m==='apart'){camGoal.rx=-0.14; camGoal.ry=-0.5;  camGoal.dist=10.8; }
+      else {               camGoal.rx=-0.12; camGoal.ry=null;  camGoal.dist=8.6; } // overview: keep auto-spin
       camAnim=true;
     }
     function setBtn(id){['bOver','bGrip','bClick','bApart'].forEach(x=>document.getElementById(x).classList.toggle('on',x===id));}
     const exEl=document.getElementById('explain');
-    function setMode(m){ mode=m; hA=0.55; clkPhase=0; gripT=0; coupler.scale.set(1,1,1);
-      gripArrows.forEach(a=>a.visible=(m==='grip')); swing.visible=(m==='click');
+    let curDev='C';
+    function showDev(){ devC.visible=(curDev==='C'); devB.visible=(curDev==='B'); }
+    function setMode(m){ mode=m; hA=0.55; clkPhase=0; swing.visible=(m==='optC'||m==='optB');
+      if(m==='optC')curDev='C'; if(m==='optB')curDev='B'; showDev();
       frameMode(m);
-      if(m==='over'){setBtn('bOver');autoRot=true;exEl.textContent='Drag to spin · pinch or scroll to zoom in';}
-      if(m==='grip'){setBtn('bGrip');autoRot=false;exEl.textContent='Our device anchors to the FIXED plate (P1) and clamps the ROTATING collar (P2). Only the plate stays still.';}
-      if(m==='click'){setBtn('bClick');autoRot=false;exEl.textContent='Sweep the handle (T3); the collar + coupler turn with it; the follower (P3) drops into your saved notch (P4) = click.';}
-      if(m==='apart'){setBtn('bApart');autoRot=false;exEl.textContent='Pulled apart: the plate (T1) is fixed; the collar+handle rotate; our anchor stays put while the coupler turns with the collar.';}
+      if(m==='over'){setBtn('bOver');autoRot=true;exEl.textContent='Drag to spin · pinch/scroll to zoom · try the two solutions →';}
+      if(m==='optC'){setBtn('bGrip');autoRot=false;exEl.textContent='OPTION C (no install): both rings clip the collar — but the weighted ring hangs vertical, so it stays still while the handle turns. Ball drops in = click.';}
+      if(m==='optB'){setBtn('bClick');autoRot=false;exEl.textContent='OPTION B (~5-min): a ring keyed to the fixed cartridge under the handle (like the factory limit stop) stays still; the handle ring clicks into it.';}
+      if(m==='apart'){setBtn('bApart');autoRot=false;exEl.textContent='Pulled apart: the "still" part vs the part that turns with the handle, with the detent between them.';}
     }
     document.getElementById('bOver').onclick=()=>setMode('over');
-    document.getElementById('bGrip').onclick=()=>setMode('grip');
-    document.getElementById('bClick').onclick=()=>setMode('click');
+    document.getElementById('bGrip').onclick=()=>setMode('optC');
+    document.getElementById('bClick').onclick=()=>setMode('optB');
     document.getElementById('bApart').onclick=()=>setMode('apart');
     document.getElementById('bLbl').onclick=function(){showLbl=!showLbl;this.classList.toggle('on',showLbl);};
     document.getElementById('bLeg').onclick=function(){const l=document.getElementById('legend');l.classList.toggle('show');this.classList.toggle('on',l.classList.contains('show'));};
@@ -377,28 +394,29 @@
       if(autoRot && ptrs.size===0) model.rotation.y+=0.0035;
 
       const eT=(mode==='apart')?1:0; explodeF+=(eT-explodeF)*0.12;
-      ex.forEach(o=>o[0].position.copy(o[0].userData.base).addScaledVector(new THREE.Vector3(...o[1]),explodeF));
+      const exV=(curDev==='C')?exC:exB;
+      [...exTap,...exV].forEach(o=>o[0].position.copy(o[0].userData.base).addScaledVector(new THREE.Vector3(...o[1]),explodeF));
 
-      if(mode==='grip'){ gripT+=0.05; const s=1.0+0.045*Math.sin(gripT*2); coupler.scale.set(s,s,1);
-        gripArrows.forEach(a=>a.setLength(0.4+0.12*(0.5+0.5*Math.sin(gripT)),0.22,0.16)); }
-      else if(mode==='click'){
+      if(mode==='optC'||mode==='optB'){
         if(clkPhase===0){ hA=ease(hA,awayA,0.05); if(Math.abs(hA-awayA)<0.04)clkPhase=1; }
-        else if(clkPhase===1){ hA=ease(hA,0.55,0.05);
-          ball.position.z=-0.26; if(Math.abs(hA-0.55)<0.02){clkPhase=2;pulse=1;} }
-        else if(clkPhase===2){ ball.position.z=-0.32; pulse=Math.max(0,pulse-0.018); if(pulse<=0){ball.position.z=-0.26;clkPhase=3;tWait=0;} }
+        else if(clkPhase===1){ hA=ease(hA,sA,0.05); if(Math.abs(hA-sA)<0.02){clkPhase=2;pulse=1;} }
+        else if(clkPhase===2){ pulse=Math.max(0,pulse-0.018); if(pulse<=0){clkPhase=3;tWait=0;} }
         else if(clkPhase===3){ tWait++; if(tWait>40)clkPhase=0; }
-      } else { hA=0.55; ball.position.z=-0.26; }
-      tapRot.rotation.z=hA; coupler.rotation.z=hA; // collar + handle + coupler all sweep together
+      } else { hA=sA; }
+      tapRot.rotation.z=hA; drivenC.rotation.z=hA; drivenB.rotation.z=hA; // handle + collar + driven rings sweep together
+      gravRing.rotation.z=0; fixedB.rotation.z=0;                         // the "still" references stay put
 
-      // notch glow + click text
-      socket.material.color.setHex(pulse>0.1?0x1f7a86:0x123036);
-      socket.material.emissive.setRGB(0,0.55*pulse,0.62*pulse);
-      clickEl.style.opacity=(mode==='click')?pulse:0;
-      if(pulse>0){ model.updateMatrixWorld(); v.set(sx,sy,0.38).applyMatrix4(model.matrixWorld).project(camera);
+      // notch glow + click text (active variant)
+      socketM.color.setHex(pulse>0.1?0x1f7a86:0x123036);
+      socketM.emissive.setRGB(0,0.55*pulse,0.62*pulse);
+      clickEl.style.opacity=(mode==='optC'||mode==='optB')?pulse:0;
+      if(pulse>0){ model.updateMatrixWorld();
+        if(curDev==='C') v.set(sx,sy,0.74); else v.set(sxB,syB,1.02);
+        v.applyMatrix4(model.matrixWorld).project(camera);
         clickEl.style.left=((v.x*0.5+0.5)*wrap.clientWidth)+'px'; clickEl.style.top=((-v.y*0.5+0.5)*wrap.clientHeight-30)+'px'; }
 
       model.updateMatrixWorld();
-      lblEls.forEach(o=>{ if(!showLbl||!o.modes.includes(mode)){o.el.style.opacity=0;return;}
+      lblEls.forEach(o=>{ if(!showLbl||!o.modes.includes(mode)||(o.dev&&o.dev!==curDev)){o.el.style.opacity=0;return;}
         v.copy(o.pos).applyMatrix4(model.matrixWorld).project(camera);
         if(v.z>1){o.el.style.opacity=0;return;}
         o.el.style.opacity=0.96; o.el.style.left=((v.x*0.5+0.5)*wrap.clientWidth)+'px'; o.el.style.top=((-v.y*0.5+0.5)*wrap.clientHeight)+'px'; });
